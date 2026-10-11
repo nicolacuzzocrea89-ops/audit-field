@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B211F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);}</style>
+<title>Audit Field</title>
+</head>
+<body>
+<style>
+  /* Layout: colonna unica da telefono. Barra scura in alto, lista rilievi al centro,
+     un solo comando a piena larghezza in basso e un tasto tondo per aggiungere. */
+  :root{
+    --ink:#1B211F; --ink-soft:#4A544F;
+    --paper:#F3F5F2; --raised:#FFFFFF; --line:#D9DDD8;
+    --teal:#0E7C7B; --teal-strong:#0A5F5E; --teal-tint:#E3F1F0; --on-teal:#FFFFFF;
+    --bar-bg:#1B211F; --bar-fg:#F3F5F2;
+    --red:#C1442D; --red-tint:#F8E6E2;
+    --amber:#A8680F; --amber-tint:#F7EBD8;
+    --blue:#3873A6; --blue-tint:#E5EDF4;
+    --green:#27795A; --green-tint:#E3F0EA;
+    --scrim:rgba(27,33,31,0.5);
+    --shadow:0 2px 10px rgba(27,33,31,0.08);
+    --radius:10px;
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-display:"Bahnschrift","SF Compact Condensed","Roboto Condensed","Arial Narrow",sans-serif;
+    --font-mono:"SF Mono","Consolas","Roboto Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#E8ECE9; --ink-soft:#A3ADA8;
+      --paper:#131817; --raised:#1D2422; --line:#343E3B;
+      --teal:#35AFAD; --teal-strong:#62C9C7; --teal-tint:#17393A; --on-teal:#06201F;
+      --bar-bg:#0B0F0E; --bar-fg:#E8ECE9;
+      --red:#EA8571; --red-tint:#3A1D17;
+      --amber:#E0A44E; --amber-tint:#3A2B12;
+      --blue:#7FB0DA; --blue-tint:#172A3A;
+      --green:#63C29E; --green-tint:#143326;
+      --scrim:rgba(0,0,0,0.62);
+      --shadow:0 2px 10px rgba(0,0,0,0.35);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#E8ECE9; --ink-soft:#A3ADA8;
+    --paper:#131817; --raised:#1D2422; --line:#343E3B;
+    --teal:#35AFAD; --teal-strong:#62C9C7; --teal-tint:#17393A; --on-teal:#06201F;
+    --bar-bg:#0B0F0E; --bar-fg:#E8ECE9;
+    --red:#EA8571; --red-tint:#3A1D17;
+    --amber:#E0A44E; --amber-tint:#3A2B12;
+    --blue:#7FB0DA; --blue-tint:#172A3A;
+    --green:#63C29E; --green-tint:#143326;
+    --scrim:rgba(0,0,0,0.62);
+    --shadow:0 2px 10px rgba(0,0,0,0.35);
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box;}
+  [hidden]{display:none!important;}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--font-body);font-size:16px;line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{font-family:var(--font-display);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;}
+  button{font-family:inherit;cursor:pointer;color:inherit;}
+  input,textarea{font-family:inherit;font-size:16px;}
+  :focus-visible{outline:3px solid var(--teal);outline-offset:2px;}
+
+  .topbar{
+    position:sticky;top:env(safe-area-inset-top,0px);z-index:20;
+    background:var(--bar-bg);color:var(--bar-fg);
+    padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .brand-mark{
+    width:22px;height:22px;border-radius:50%;
+    border:3px solid var(--teal);border-right-color:transparent;transform:rotate(-45deg);
+  }
+  .topbar .title{font-size:13px;letter-spacing:0.08em;}
+  .topbar .chip{
+    font-family:var(--font-mono);font-size:11px;opacity:0.8;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+
+  main{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 150px;}
+  h1.page-title{font-size:22px;margin:4px 0;text-wrap:balance;}
+  p.page-sub{color:var(--ink-soft);font-size:14px;margin:0 0 22px;}
+
+  .notice{
+    background:var(--amber-tint);border:1px solid var(--amber);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:20px;font-size:14px;
+  }
+  .notice .row{display:flex;gap:10px;margin-top:12px;}
+  .notice .row .btn{flex:1;}
+
+  .field{margin-bottom:16px;}
+  .field label, .group-label{
+    display:block;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:6px;
+  }
+  .req{color:var(--red);}
+  .field input, .field textarea{
+    width:100%;padding:12px 13px;border:1.5px solid var(--line);border-radius:8px;
+    background:var(--raised);color:var(--ink);
+  }
+  .field input:focus, .field textarea:focus{outline:3px solid var(--teal-tint);border-color:var(--teal);}
+  .field textarea{resize:vertical;min-height:90px;}
+  .field.error input{border-color:var(--red);}
+  .field .errmsg{color:var(--red);font-size:12px;margin-top:5px;display:none;}
+  .field.error .errmsg{display:block;}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:1.5px solid transparent;border-radius:8px;padding:14px 18px;
+    font-size:15px;font-weight:600;transition:transform .08s ease;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{background:var(--teal);color:var(--on-teal);width:100%;}
+  .btn-secondary{background:var(--raised);color:var(--ink);border-color:var(--line);width:100%;}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border-color:var(--line);}
+  .btn-danger{background:var(--red);color:var(--raised);width:100%;}
+  .btn-danger-ghost{background:transparent;color:var(--red);border-color:var(--red);width:100%;}
+  .btn:disabled{opacity:0.4;pointer-events:none;}
+
+  .audit-chip{
+    background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 14px;margin-bottom:18px;box-shadow:var(--shadow);
+  }
+  .audit-chip .cname{font-size:16px;font-weight:700;overflow-wrap:anywhere;}
+  .audit-chip .cmeta{font-size:12px;color:var(--ink-soft);margin-top:2px;overflow-wrap:anywhere;}
+
+  .empty-state{
+    text-align:center;padding:40px 16px;color:var(--ink-soft);
+    border:1.5px dashed var(--line);border-radius:var(--radius);font-size:14px;margin-bottom:16px;
+  }
+
+  .rilievo-card{
+    background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;gap:12px;
+  }
+  .id-tag{
+    flex-shrink:0;width:52px;height:52px;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;
+    transform:rotate(-2deg);border:2px dashed;
+  }
+  .rilievo-body{flex:1;min-width:0;}
+  .class-badge{
+    display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;
+    padding:3px 8px;border-radius:20px;
+  }
+  .rilievo-text{
+    font-size:14px;margin:8px 0;overflow-wrap:anywhere;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .rilievo-photos{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  .rilievo-photos img{width:44px;height:44px;object-fit:cover;border-radius:5px;border:1px solid var(--line);}
+  .link-btn{font-size:13px;background:none;border:none;color:var(--red);padding:6px 0;text-decoration:underline;}
+
+  .cls-NC1 .id-tag{border-color:var(--red);color:var(--red);background:var(--red-tint);}
+  .cls-NC1 .class-badge{background:var(--red-tint);color:var(--red);}
+  .cls-NC2 .id-tag{border-color:var(--amber);color:var(--amber);background:var(--amber-tint);}
+  .cls-NC2 .class-badge{background:var(--amber-tint);color:var(--amber);}
+  .cls-OSS .id-tag{border-color:var(--blue);color:var(--blue);background:var(--blue-tint);}
+  .cls-OSS .class-badge{background:var(--blue-tint);color:var(--blue);}
+  .cls-OPM .id-tag{border-color:var(--green);color:var(--green);background:var(--green-tint);}
+  .cls-OPM .class-badge{background:var(--green-tint);color:var(--green);}
+
+  .bottom-bar{
+    position:fixed;left:0;right:0;bottom:0;z-index:20;
+    background:var(--raised);border-top:1px solid var(--line);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
+  }
+  .bottom-bar .btn-primary{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .fab{
+    position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:21;
+    width:56px;height:56px;border-radius:50%;background:var(--teal);color:var(--on-teal);border:none;
+    font-size:28px;line-height:1;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(0,0,0,0.3);
+  }
+  .fab:active{transform:scale(0.95);}
+
+  .overlay{position:fixed;inset:0;z-index:30;background:var(--scrim);}
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;max-height:92%;overflow-y:auto;
+    background:var(--paper);border-radius:16px 16px 0 0;
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+  }
+  .sheet-handle{width:40px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 16px;}
+  .sheet h2{font-size:17px;margin:0 0 16px;}
+
+  .photo-row{display:flex;gap:8px;margin-bottom:10px;}
+  .photo-btn{
+    flex:1;border:1.5px dashed var(--line);border-radius:8px;background:var(--raised);
+    padding:16px 8px;text-align:center;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;
+  }
+  .photo-btn small{display:block;font-weight:400;font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  .photo-btn:focus-within{outline:3px solid var(--teal);outline-offset:2px;}
+  .thumb-strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .thumb{position:relative;width:64px;height:64px;}
+  .thumb img{width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid var(--line);}
+  .thumb .rm{
+    position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;
+    background:var(--red);color:var(--raised);border:2px solid var(--paper);
+    font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;
+  }
+
+  .class-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
+  .class-opt{border-radius:8px;padding:12px 10px;text-align:left;border:2px solid var(--line);background:var(--raised);}
+  .class-opt .lbl{font-weight:700;font-size:13px;}
+  .class-opt .sub{font-size:11px;color:var(--ink-soft);}
+  .class-opt[aria-pressed="true"][data-c="NC1"]{border-color:var(--red);background:var(--red-tint);}
+  .class-opt[aria-pressed="true"][data-c="NC2"]{border-color:var(--amber);background:var(--amber-tint);}
+  .class-opt[aria-pressed="true"][data-c="OSS"]{border-color:var(--blue);background:var(--blue-tint);}
+  .class-opt[aria-pressed="true"][data-c="OPM"]{border-color:var(--green);background:var(--green-tint);}
+
+  .sheet-actions, .dialog-actions{display:flex;gap:10px;margin-top:6px;}
+  .sheet-actions .btn-secondary, .dialog-actions .btn-secondary{flex:1;}
+  .sheet-actions .btn-primary, .dialog-actions .btn-primary, .dialog-actions .btn-danger{flex:2;}
+
+  .dialog-wrap{display:flex;align-items:center;justify-content:center;padding:16px;z-index:40;}
+  .dialog{
+    background:var(--paper);border-radius:14px;padding:20px;max-width:380px;width:100%;
+    box-shadow:0 10px 40px rgba(0,0,0,0.35);
+  }
+  .dialog p{margin:0 0 18px;font-size:15px;}
+
+  .toast{
+    position:fixed;left:50%;bottom:calc(160px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:20px;
+    font-size:13px;z-index:50;opacity:0;pointer-events:none;transition:opacity .25s ease;
+    max-width:calc(100% - 32px);text-align:center;
+  }
+  .toast.show{opacity:1;}
+
+  @media (max-width:360px){
+    .bottom-bar .btn-primary{font-size:13.5px;padding-inline:10px;}
+    .fab{width:50px;height:50px;font-size:24px;}
+  }
+  @media (prefers-reduced-motion: reduce){ .btn, .fab, .toast{transition:none;} }
+</style>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <span class="title display">Audit&nbsp;Field</span>
+  </div>
+  <div class="chip" id="topbarChip"></div>
+</header>
+
+<main>
+  <noscript><div class="notice"><strong>Questa schermata non può avviare l’app.</strong> Il programma con cui hai aperto il file non esegue le app web: aprilo con Chrome o Safari.</div></noscript>
+  <div class="notice" id="storageWarning" hidden>
+    <strong>Salvataggio automatico non disponibile su questo browser.</strong>
+    Genera il documento prima di chiudere la pagina, altrimenti i rilievi vanno persi.
+  </div>
+
+  <!-- SCHERMATA 1: DATI AUDIT -->
+  <section id="screen-setup">
+    <div class="notice" id="resumeBanner" hidden>
+      <strong>Hai un audit in corso su questo dispositivo.</strong>
+      <div id="resumeInfo" style="margin-top:6px;"></div>
+      <div class="row">
+        <button class="btn btn-primary" id="resumeBtn" type="button">Riprendi</button>
+        <button class="btn btn-ghost" id="discardBtn" type="button">Nuovo audit</button>
+      </div>
+    </div>
+
+    <h1 class="page-title display">Nuovo Sopralluogo</h1>
+    <p class="page-sub">Compila i dati obbligatori, poi passa alla raccolta dei rilievi in campo.</p>
+
+    <div class="field" id="f-committente">
+      <label for="committente">Committente <span class="req">*</span></label>
+      <input type="text" id="committente" placeholder="Es. Ecopiana Srl" autocomplete="off">
+      <div class="errmsg">Campo obbligatorio</div>
+    </div>
+    <div class="field" id="f-luogo">
+      <label for="luogo">Luogo <span class="req">*</span></label>
+      <input type="text" id="luogo" placeholder="Es. Cittanova (RC)" autocomplete="off">
+      <div class="errmsg">Campo obbligatorio</div>
+    </div>
+    <div class="field" id="f-data">
+      <label for="data">Data <span class="req">*</span></label>
+      <input type="date" id="data">
+      <div class="errmsg">Campo obbligatorio</div>
+    </div>
+    <div class="field" id="f-auditor">
+      <label for="auditor">Auditor <span class="req">*</span></label>
+      <input type="text" id="auditor" placeholder="Nome e cognome" autocomplete="off">
+      <div class="errmsg">Campo obbligatorio</div>
+    </div>
+    <div class="field">
+      <label for="leadAuditor">Lead Auditor</label>
+      <input type="text" id="leadAuditor" placeholder="Facoltativo" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="oggetto">Oggetto</label>
+      <input type="text" id="oggetto" placeholder="Es. Verifica conformità D.Lgs. 81/08" autocomplete="off">
+    </div>
+
+    <button class="btn btn-primary" id="startBtn" type="button">Inizia audit →</button>
+  </section>
+
+  <!-- SCHERMATA 2: RILIEVI -->
+  <section id="screen-capture" hidden>
+    <div class="audit-chip">
+      <div class="cname" id="chipCommittente"></div>
+      <div class="cmeta" id="chipMeta"></div>
+    </div>
+    <div id="rilieviList"></div>
+    <div class="empty-state" id="emptyState">Nessun rilievo ancora.<br>Tocca il tasto + per aggiungere il primo.</div>
+    <button class="btn btn-danger-ghost" id="cancelAuditBtn" type="button">Annulla e inizia un nuovo audit</button>
+  </section>
+</main>
+
+<button class="fab" id="fabAdd" type="button" aria-label="Aggiungi rilievo" hidden>+</button>
+
+<div class="bottom-bar" id="bottomBar" hidden>
+  <button class="btn btn-primary" id="genBtn" type="button" disabled>Genera documento (0)</button>
+</div>
+
+<!-- NUOVO RILIEVO -->
+<div class="overlay" id="sheetOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-handle"></div>
+    <h2 class="display" id="sheetTitle">Nuovo Rilievo</h2>
+
+    <div class="photo-row">
+      <label class="photo-btn" for="camInput">Scatta foto<small>fotocamera</small>
+        <input class="visually-hidden" type="file" id="camInput" accept="image/*" capture="environment">
+      </label>
+      <label class="photo-btn" for="galInput">Carica foto<small>dalla galleria</small>
+        <input class="visually-hidden" type="file" id="galInput" accept="image/*" multiple>
+      </label>
+    </div>
+    <div class="thumb-strip" id="thumbStrip"></div>
+
+    <div class="field">
+      <label for="descInput">Descrizione <span class="req">*</span></label>
+      <textarea id="descInput" placeholder="Descrivi cosa hai osservato..."></textarea>
+    </div>
+
+    <span class="group-label" id="classLabel">Classificazione <span class="req">*</span></span>
+    <div class="class-grid" id="classGrid" role="group" aria-labelledby="classLabel">
+      <button class="class-opt" type="button" data-c="NC1" aria-pressed="false"><div class="lbl">NC1</div><div class="sub">Non Conf. Maggiore</div></button>
+      <button class="class-opt" type="button" data-c="NC2" aria-pressed="false"><div class="lbl">NC2</div><div class="sub">Non Conf. Minore</div></button>
+      <button class="class-opt" type="button" data-c="OSS" aria-pressed="false"><div class="lbl">OSS</div><div class="sub">Osservazione</div></button>
+      <button class="class-opt" type="button" data-c="OPM" aria-pressed="false"><div class="lbl">OPM</div><div class="sub">Miglioramento</div></button>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="sheetCancel" type="button">Annulla</button>
+      <button class="btn btn-primary" id="sheetSave" type="button">Salva rilievo</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFERMA (sostituisce le finestre del browser, che qui non compaiono) -->
+<div class="overlay dialog-wrap" id="confirmOverlay" hidden>
+  <div class="dialog" role="alertdialog" aria-modal="true" aria-describedby="confirmMsg">
+    <p id="confirmMsg"></p>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" id="confirmNo" type="button">Annulla</button>
+      <button class="btn btn-primary" id="confirmYes" type="button">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="docx.js"></script>
+<script>
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const CLASS_LABELS = {
+    NC1:'Non Conformità Maggiore', NC2:'Non Conformità Minore',
+    OSS:'Osservazione', OPM:'Opportunità di Miglioramento'
+  };
+  const SAVE_KEY = 'audit-progress';
+  const emptyState = () => ({ meta:null, rilievi:[], nextId:901 });
+
+  let state = emptyState();
+  let pendingResume = null;
+  let tempPhotos = [];
+  let tempClass = null;
+
+  // Il salvataggio del file passa dal visualizzatore di Claude: lo chiedo subito,
+  // così è pronto quando serve.
+  const downloadsReady = (window.claude && typeof window.claude.use === 'function')
+    ? Promise.resolve(window.claude.use('downloads')).catch(() => null)
+    : Promise.resolve(null);
+
+  // ---------- memoria sul dispositivo (IndexedDB: regge anche le foto) ----------
+  const store = (function(){
+    let dbp = null;
+    function open(){
+      if(dbp) return dbp;
+      dbp = new Promise((resolve, reject) => {
+        let req;
+        try{ req = indexedDB.open('audit-field', 1); }catch(e){ reject(e); return; }
+        req.onupgradeneeded = () => req.result.createObjectStore('kv');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+        req.onblocked = () => reject(new Error('blocked'));
+      });
+      return dbp;
+    }
+    async function run(mode, fn){
+      const db = await open();
+      return new Promise((resolve, reject) => {
+        const t = db.transaction('kv', mode);
+        const r = fn(t.objectStore('kv'));
+        t.oncomplete = () => resolve(r.result);
+        t.onerror = () => reject(t.error);
+        t.onabort = () => reject(t.error);
+      });
+    }
+    return {
+      get: k => run('readonly', s => s.get(k)),
+      set: (k, v) => run('readwrite', s => s.put(v, k)),
+      del: k => run('readwrite', s => s.delete(k))
+    };
+  })();
+
+  async function saveState(){
+    try{ await store.set(SAVE_KEY, state); $('storageWarning').hidden = true; }
+    catch(e){ console.error('salvataggio non riuscito', e); $('storageWarning').hidden = false; }
+  }
+  async function clearSaved(){
+    try{ await store.del(SAVE_KEY); }catch(e){ /* niente da cancellare */ }
+  }
+  async function loadSaved(){
+    let saved = null;
+    try{ saved = await store.get(SAVE_KEY); }
+    catch(e){ $('storageWarning').hidden = false; return; }
+    if(saved && saved.meta && Array.isArray(saved.rilievi) && !state.meta){
+      pendingResume = saved;
+      const n = saved.rilievi.length;
+      $('resumeInfo').textContent = saved.meta.committente + ' — ' + n + (n === 1 ? ' rilievo salvato' : ' rilievi salvati');
+      $('resumeBanner').hidden = false;
+    }
+  }
+
+  // ---------- utilità ----------
+  function localISODate(){
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function formatDate(iso){
+    if(!iso) return '';
+    const parts = iso.split('-');
+    return parts.length === 3 ? parts[2] + '/' + parts[1] + '/' + parts[0] : iso;
+  }
+  let toastTimer = null;
+  function toast(msg, ms){
+    const t = $('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), ms || 2200);
+  }
+  function askConfirm(message, yesLabel, danger, noLabel){
+    return new Promise(resolve => {
+      const ov = $('confirmOverlay'), yes = $('confirmYes'), no = $('confirmNo');
+      $('confirmMsg').textContent = message;
+      yes.textContent = yesLabel || 'Conferma';
+      no.textContent = noLabel || 'Annulla';
+      yes.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+      ov.hidden = false;
+      const done = v => { ov.hidden = true; yes.onclick = no.onclick = null; resolve(v); };
+      yes.onclick = () => done(true);
+      no.onclick = () => done(false);
+      yes.focus();
+    });
+  }
+
+  // ---------- schermate ----------
+  function showSetup(){
+    $('screen-setup').hidden = false;
+    $('screen-capture').hidden = true;
+    $('bottomBar').hidden = true;
+    $('fabAdd').hidden = true;
+    $('topbarChip').textContent = '';
+  }
+  function enterCapture(){
+    const m = state.meta;
+    $('chipCommittente').textContent = m.committente;
+    $('chipMeta').textContent = m.luogo + ' · ' + formatDate(m.data) + ' · ' + m.auditor;
+    $('topbarChip').textContent = m.committente;
+    $('screen-setup').hidden = true;
+    $('screen-capture').hidden = false;
+    $('bottomBar').hidden = false;
+    $('fabAdd').hidden = false;
+    renderList();
+    window.scrollTo(0, 0);
+  }
+  function resetToSetup(){
+    state = emptyState();
+    pendingResume = null;
+    $('resumeBanner').hidden = true;
+    ['committente','luogo','auditor','leadAuditor','oggetto'].forEach(id => { $(id).value = ''; });
+    $('data').value = localISODate();
+    showSetup();
+  }
+
+  function validateField(id){
+    const ok = $(id).value.trim().length > 0;
+    $('f-' + id).classList.toggle('error', !ok);
+    return ok;
+  }
+  function startAudit(){
+    let allOk = true;
+    ['committente','luogo','data','auditor'].forEach(id => { if(!validateField(id)) allOk = false; });
+    if(!allOk){ toast('Compila i campi obbligatori'); return; }
+    state = emptyState();
+    state.meta = {
+      committente: $('committente').value.trim(),
+      luogo: $('luogo').value.trim(),
+      data: $('data').value,
+      auditor: $('auditor').value.trim(),
+      leadAuditor: $('leadAuditor').value.trim(),
+      oggetto: $('oggetto').value.trim()
+    };
+    pendingResume = null;
+    $('resumeBanner').hidden = true;
+    saveState();
+    enterCapture();
+  }
+
+  // ---------- elenco rilievi ----------
+  function renderList(){
+    const list = $('rilieviList');
+    list.textContent = '';
+    state.rilievi.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'rilievo-card cls-' + r.classificazione;
+
+      const tag = document.createElement('div');
+      tag.className = 'id-tag'; tag.textContent = r.id;
+
+      const body = document.createElement('div');
+      body.className = 'rilievo-body';
+
+      const badge = document.createElement('span');
+      badge.className = 'class-badge';
+      badge.textContent = r.classificazione + ' · ' + CLASS_LABELS[r.classificazione];
+
+      const text = document.createElement('div');
+      text.className = 'rilievo-text'; text.textContent = r.descrizione;
+
+      body.append(badge, text);
+
+      if(r.foto && r.foto.length){
+        const photos = document.createElement('div');
+        photos.className = 'rilievo-photos';
+        r.foto.forEach((f, i) => {
+          const img = document.createElement('img');
+          img.src = f.dataUrl; img.alt = 'Foto ' + (i + 1) + ' del rilievo ' + r.id;
+          photos.appendChild(img);
+        });
+        body.appendChild(photos);
+      }
+
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'link-btn'; del.textContent = 'Elimina';
+      del.addEventListener('click', () => deleteRilievo(r.id));
+      body.appendChild(del);
+
+      card.append(tag, body);
+      list.appendChild(card);
+    });
+    const n = state.rilievi.length;
+    $('emptyState').hidden = n > 0;
+    $('genBtn').textContent = 'Genera documento (' + n + ')';
+    $('genBtn').disabled = n === 0;
+  }
+  async function deleteRilievo(id){
+    if(!(await askConfirm('Eliminare il rilievo ' + id + '?', 'Elimina', true))) return;
+    state.rilievi = state.rilievi.filter(r => r.id !== id);
+    saveState();
+    renderList();
+  }
+  async function cancelAudit(){
+    const ok = await askConfirm('Annullare questo audit? I rilievi non ancora esportati andranno persi.', 'Annulla audit', true, 'Continua');
+    if(!ok) return;
+    await clearSaved();
+    resetToSetup();
+  }
+
+  // ---------- nuovo rilievo ----------
+  function openSheet(){
+    tempPhotos = []; tempClass = null;
+    $('descInput').value = '';
+    renderThumbs();
+    pickClass(null);
+    $('sheetOverlay').hidden = false;
+  }
+  function closeSheet(){ $('sheetOverlay').hidden = true; }
+  function pickClass(c){
+    tempClass = c;
+    document.querySelectorAll('.class-opt').forEach(b => {
+      b.setAttribute('aria-pressed', String(b.dataset.c === c));
+    });
+  }
+  function compressImage(file){
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try{
+          const scale = Math.min(1, 1400 / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve({ dataUrl: canvas.toDataURL('image/jpeg', 0.72), width: canvas.width, height: canvas.height });
+        }catch(e){ reject(e); }
+        finally{ URL.revokeObjectURL(url); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('immagine non leggibile')); };
+      img.src = url;
+    });
+  }
+  async function handlePhotos(input){
+    const files = Array.from(input.files || []);
+    input.value = '';
+    let failed = 0;
+    for(const file of files){
+      try{ tempPhotos.push(await compressImage(file)); }
+      catch(e){ failed++; console.error('foto non letta', e); }
+    }
+    renderThumbs();
+    if(failed) toast(failed === 1 ? 'Una foto non è stata letta: riprova o scegline un’altra' : failed + ' foto non sono state lette', 3500);
+  }
+  function renderThumbs(){
+    const strip = $('thumbStrip');
+    strip.textContent = '';
+    tempPhotos.forEach((p, i) => {
+      const wrap = document.createElement('div'); wrap.className = 'thumb';
+      const img = document.createElement('img'); img.src = p.dataUrl; img.alt = 'Foto ' + (i + 1);
+      const rm = document.createElement('button');
+      rm.type = 'button'; rm.className = 'rm'; rm.textContent = '×';
+      rm.setAttribute('aria-label', 'Rimuovi foto ' + (i + 1));
+      rm.addEventListener('click', () => { tempPhotos.splice(i, 1); renderThumbs(); });
+      wrap.append(img, rm);
+      strip.appendChild(wrap);
+    });
+  }
+  function saveRilievo(){
+    const desc = $('descInput').value.trim();
+    if(!desc){ toast('Inserisci una descrizione'); return; }
+    if(!tempClass){ toast('Seleziona una classificazione'); return; }
+    state.rilievi.push({ id: state.nextId++, classificazione: tempClass, descrizione: desc, foto: tempPhotos.slice() });
+    saveState();
+    renderList();
+    closeSheet();
+    toast('Rilievo salvato');
+  }
+
+  // ---------- documento Word ----------
+  function dataUrlToBytes(dataUrl){
+    const bin = atob(dataUrl.split(',')[1]);
+    const bytes = new Uint8Array(bin.length);
+    for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+  function buildDocument(D, st){
+    const { Document, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell,
+            ImageRun, WidthType, AlignmentType, BorderStyle, ShadingType } = D;
+    const m = st.meta;
+    const PAGE_W = 9026; // A4 con margini da 2,54 cm, in ventesimi di punto
+    const thin = { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' };
+    const borders = { top: thin, bottom: thin, left: thin, right: thin };
+    const margins = { top: 80, bottom: 80, left: 110, right: 110 };
+
+    function cell(text, w, opts){
+      opts = opts || {};
+      const lines = String(text == null || text === '' ? '—' : text).split('\n');
+      return new TableCell({
+        width: { size: w, type: WidthType.DXA }, borders, margins,
+        shading: opts.fill ? { type: ShadingType.CLEAR, color: 'auto', fill: opts.fill } : undefined,
+        children: [ new Paragraph({
+          alignment: opts.center ? AlignmentType.CENTER : AlignmentType.LEFT,
+          children: lines.map((line, i) => new TextRun(Object.assign({ text: line, bold: !!opts.bold }, i ? { break: 1 } : {})))
+        }) ]
+      });
+    }
+    function textParagraph(text){
+      return new Paragraph({
+        spacing: { after: 120 },
+        children: String(text).split('\n').map((line, i) => new TextRun(Object.assign({ text: line }, i ? { break: 1 } : {})))
+      });
+    }
+
+    const metaW = [2256, 6770];
+    const metaRow = (label, value) => new TableRow({ children: [ cell(label, metaW[0], { bold: true }), cell(value, metaW[1]) ] });
+    const metaTable = new Table({
+      width: { size: PAGE_W, type: WidthType.DXA }, columnWidths: metaW,
+      rows: [
+        metaRow('Committente', m.committente),
+        metaRow('Oggetto', m.oggetto),
+        metaRow('Luogo e data', m.luogo + ', ' + formatDate(m.data)),
+        metaRow('Auditor', m.auditor),
+        metaRow('Lead Auditor', m.leadAuditor)
+      ]
+    });
+
+    const resW = [900, 1100, 7026];
+    const head = (t, w) => cell(t, w, { bold: true, fill: 'EEEEEE', center: true });
+    const resultTable = new Table({
+      width: { size: PAGE_W, type: WidthType.DXA }, columnWidths: resW,
+      rows: [ new TableRow({ tableHeader: true, children: [ head('Id', resW[0]), head('Class.', resW[1]), head('Rilievo', resW[2]) ] }) ]
+        .concat(st.rilievi.map(r => new TableRow({ children: [
+          cell(String(r.id), resW[0], { bold: true, center: true }),
+          cell(r.classificazione, resW[1], { center: true }),
+          cell(r.descrizione, resW[2])
+        ] })))
+    });
+
+    const children = [
+      new Paragraph({ spacing: { after: 200 }, children: [ new TextRun({ text: 'BOZZA generata da Audit Field — da rifinire in ufficio', size: 18, color: '888888' }) ] }),
+      new Paragraph({ heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 300 }, children: [ new TextRun('RAPPORTO AUDIT') ] }),
+      metaTable,
+      new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 400, after: 160 }, children: [ new TextRun('Risultati dell’Audit') ] }),
+      resultTable,
+      new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 500, after: 160 }, children: [ new TextRun('Evidenze Fotografiche') ] })
+    ];
+
+    st.rilievi.forEach(r => {
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_3, spacing: { before: 360, after: 120 },
+        children: [ new TextRun('Rilievo ' + r.id + ' — ' + r.classificazione + ': ' + CLASS_LABELS[r.classificazione]) ]
+      }));
+      children.push(textParagraph(r.descrizione));
+      (r.foto || []).forEach((f, i) => {
+        const w = Math.min(440, f.width || 440);
+        const h = Math.max(1, Math.round(w * ((f.height || 330) / (f.width || 440))));
+        children.push(new Paragraph({
+          alignment: AlignmentType.CENTER, spacing: { before: 160 }, keepNext: true,
+          children: [ new ImageRun({ data: dataUrlToBytes(f.dataUrl), transformation: { width: w, height: h } }) ]
+        }));
+        children.push(new Paragraph({
+          alignment: AlignmentType.CENTER, spacing: { after: 160 },
+          children: [ new TextRun({ text: 'Figura ' + r.id + '.' + String(i + 1).padStart(2, '0'), size: 18, color: '555555' }) ]
+        }));
+      });
+      if(!(r.foto || []).length){
+        children.push(new Paragraph({ children: [ new TextRun({ text: 'Nessuna evidenza fotografica.', italics: true, size: 18, color: '555555' }) ] }));
+      }
+    });
+
+    return new Document({
+      creator: 'Audit Field',
+      title: 'Rapporto Audit — ' + m.committente,
+      styles: { default: { document: { run: { font: 'Calibri', size: 22 } } } },
+      sections: [ { children } ]
+    });
+  }
+
+  // Consegna il file: dentro Claude passa dalla conferma di salvataggio, altrove dal download del browser.
+  async function deliver(blob, filename){
+    const downloads = await downloadsReady;
+    if(downloads){
+      try{ await downloads.save({ filename, data: blob }); return 'saved'; }
+      catch(e){
+        const code = e && e.code;
+        if(code === 'declined') return 'declined';
+        if(code === 'rate_limited') return 'busy';
+        throw e;
+      }
+    }
+    let framed = true;
+    try{ framed = window.self !== window.top; }catch(e){ framed = true; }
+    if(framed) return 'unavailable';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return 'started';
+  }
+
+  async function generateDocument(){
+    if(typeof docx === 'undefined'){
+      toast('Generatore del documento non caricato: controlla la connessione e ricarica la pagina', 4500);
+      return;
+    }
+    const btn = $('genBtn');
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Generazione in corso…';
+    let outcome = null;
+    try{
+      const blob = await docx.Packer.toBlob(buildDocument(docx, state));
+      const m = state.meta;
+      const name = 'Audit_' + (m.committente || 'report').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') + '_' + m.data + '.docx';
+      outcome = await deliver(blob, name);
+    }catch(err){
+      console.error(err);
+      toast('Documento non generato: ' + ((err && err.message) || 'errore imprevisto') + '. I rilievi restano salvati.', 5000);
+    }finally{
+      btn.textContent = label;
+      btn.disabled = state.rilievi.length === 0;
+    }
+    if(outcome === 'declined'){ toast('Salvataggio annullato. I rilievi restano qui.', 3000); return; }
+    if(outcome === 'busy'){ toast('C’è già una richiesta di salvataggio aperta: rispondi a quella e riprova.', 4000); return; }
+    if(outcome === 'unavailable'){ toast('In questa vista il salvataggio dei file non è disponibile. Apri Audit Field dall’app Claude o da claude.ai. I rilievi restano salvati.', 6000); return; }
+    if(outcome === 'saved' || outcome === 'started'){
+      toast(outcome === 'saved' ? 'Documento salvato' : 'Download avviato');
+      const clear = await askConfirm('Documento generato. Controlla che il file si apra, poi puoi cancellare i dati di questo audit dal dispositivo.', 'Cancella i dati', true, 'Tieni i dati');
+      if(clear){ await clearSaved(); resetToSetup(); }
+    }
+  }
+
+  // ---------- collegamenti ----------
+  $('data').value = $('data').value || localISODate();
+  $('startBtn').addEventListener('click', startAudit);
+  $('resumeBtn').addEventListener('click', () => {
+    if(!pendingResume) return;
+    state = pendingResume; pendingResume = null;
+    state.rilievi.forEach(r => { r.foto = (r.foto || []).map(f => typeof f === 'string' ? { dataUrl: f, width: 440, height: 330 } : f); });
+    $('resumeBanner').hidden = true;
+    enterCapture();
+  });
+  $('discardBtn').addEventListener('click', () => { $('resumeBanner').hidden = true; });
+  $('cancelAuditBtn').addEventListener('click', cancelAudit);
+  $('fabAdd').addEventListener('click', openSheet);
+  $('genBtn').addEventListener('click', generateDocument);
+  $('sheetCancel').addEventListener('click', closeSheet);
+  $('sheetSave').addEventListener('click', saveRilievo);
+  $('sheetOverlay').addEventListener('click', e => { if(e.target === e.currentTarget) closeSheet(); });
+  $('camInput').addEventListener('change', e => handlePhotos(e.target));
+  $('galInput').addEventListener('change', e => handlePhotos(e.target));
+  document.querySelectorAll('.class-opt').forEach(b => b.addEventListener('click', () => pickClass(b.dataset.c)));
+  ['committente','luogo','data','auditor'].forEach(id => $(id).addEventListener('input', () => $('f-' + id).classList.remove('error')));
+
+  loadSaved();
+})();
+</script>
+
+<script>
+  // App installata: funziona senza rete e chiede al telefono di non cancellare i rilievi salvati.
+  if('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(e){ console.error('sw', e); }); }); }
+  try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(function(){}); } }catch(e){}
+</script>
+</body>
+</html>
