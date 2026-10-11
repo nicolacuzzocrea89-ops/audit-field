@@ -677,7 +677,7 @@
   }
   function buildDocument(D, st){
     const { Document, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell,
-            ImageRun, WidthType, AlignmentType, BorderStyle, ShadingType } = D;
+            ImageRun, WidthType, AlignmentType, BorderStyle, ShadingType, Header } = D;
     const m = st.meta;
     const PAGE_W = 9026; // A4 con margini da 2,54 cm, in ventesimi di punto
     const thin = { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' };
@@ -760,11 +760,21 @@
       }
     });
 
+    // Logo O2HP in alto a destra, nell'intestazione di ogni pagina (lo stesso della barra dell'app).
+    let logoHeader = null;
+    const logoEl = document.querySelector('.brand-logo');
+    if(logoEl && /^data:image\//.test(logoEl.src)){
+      logoHeader = new Header({ children: [ new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: [ new ImageRun({ data: dataUrlToBytes(logoEl.src), transformation: { width: 50, height: 55 } }) ]
+      }) ] });
+    }
+
     return new Document({
       creator: 'Audit Field',
       title: 'Rapporto Audit — ' + m.committente,
       styles: { default: { document: { run: { font: 'Calibri', size: 22 } } } },
-      sections: [ { children } ]
+      sections: [ Object.assign(logoHeader ? { headers: { default: logoHeader } } : {}, { children }) ]
     });
   }
 
