@@ -1,5 +1,5 @@
 // Audit Field: copia locale dell'app, così si apre anche senza rete.
-const CACHE = 'audit-field-v1';
+const CACHE = 'audit-field-v2';
 const FILES = ['./', 'index.html', 'docx.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
